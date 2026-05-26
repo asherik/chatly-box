@@ -1,1 +1,17 @@
 /.idea/
+/node_modules/
+/frontend/node_modules/
+/.next/
+/frontend/.next/
+/dist/
+/.env
+/frontend/.env
+/prisma/dev.db
+/frontend/prisma/dev.db
+/storage/
+/frontend/storage/
+*.tsbuildinfo
+/llamalib/target/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

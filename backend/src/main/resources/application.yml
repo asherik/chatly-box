@@ -1,0 +1,22 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: chatly-box
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/chatly_box}
+    username: ${DATABASE_USER:postgres}
+    password: ${DATABASE_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+
+chatly:
+  native-library-path: ${CHATLY_NATIVE_LIBRARY:../llamalib/target/release/chatly_llamalib.dll}
+  auth:
+    admin-email: ${ADMIN_EMAIL:admin@company.local}
+    admin-password: ${ADMIN_PASSWORD:admin12345}
