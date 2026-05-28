@@ -1,5 +1,9 @@
 package com.chatlybox.chat;
 
+import com.chatlybox.chat.dto.AskRequest;
+import com.chatlybox.chat.dto.AskResponse;
+import com.chatlybox.chat.dto.ChatResponse;
+import com.chatlybox.chat.dto.MessageResponse;
 import com.chatlybox.rag.RagFacade;
 import com.chatlybox.users.AppUser;
 import com.chatlybox.users.AppUserRepository;
@@ -9,6 +13,8 @@ import java.security.Principal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,22 +26,12 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/chats")
+@RequiredArgsConstructor
 public class ChatController {
   private final ChatRepository chats;
   private final ChatMessageRepository messages;
   private final AppUserRepository users;
   private final RagFacade rag;
-
-  public ChatController(
-      ChatRepository chats,
-      ChatMessageRepository messages,
-      AppUserRepository users,
-      RagFacade rag) {
-    this.chats = chats;
-    this.messages = messages;
-    this.users = users;
-    this.rag = rag;
-  }
 
   @GetMapping
   List<ChatResponse> list(Principal principal) {
@@ -97,24 +93,5 @@ public class ChatController {
     }
     return users.findByEmail(principal.getName().toLowerCase())
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
-  }
-
-  record AskRequest(UUID chatId, @NotBlank String message) {}
-
-  record AskResponse(UUID chatId, MessageResponse message) {}
-
-  record ChatResponse(UUID id, String title, List<MessageResponse> messages) {
-    static ChatResponse from(ChatEntity chat) {
-      return new ChatResponse(
-          chat.id,
-          chat.title,
-          chat.messages.stream().map(MessageResponse::from).toList());
-    }
-  }
-
-  record MessageResponse(UUID id, String role, String content, String sources) {
-    static MessageResponse from(ChatMessageEntity message) {
-      return new MessageResponse(message.id, message.role, message.content, message.sources);
-    }
   }
 }
