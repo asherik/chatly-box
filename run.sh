@@ -1,10 +1,10 @@
 #!/usr/bin/env sh
 set -eu
 
-COMPOSE="${COMPOSE:-docker compose}"
+docker compose -f docker-compose-local up -d
 
-echo "Starting local infrastructure..."
-$COMPOSE -f docker-compose-local up -d postgres minio minio-init
-
-echo "Building and starting Chatly Box..."
-$COMPOSE up --build
+echo "Local infrastructure is running:"
+echo "- Postgres: localhost:5432"
+echo "- MinIO API: localhost:9000"
+echo "- MinIO console: http://localhost:9001"
+echo "- Elasticsearch: http://localhost:9200"
