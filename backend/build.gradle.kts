@@ -2,7 +2,6 @@ plugins {
   java
   id("org.springframework.boot") version "4.1.0-RC1"
   id("io.spring.dependency-management") version "1.1.7"
-  id("com.google.protobuf") version "0.9.5"
 }
 
 group = "com.chatlybox"
@@ -15,8 +14,6 @@ java {
 }
 
 extra["springCloudVersion"] = "2025.1.1"
-extra["grpcVersion"] = "1.81.0"
-extra["protobufVersion"] = "4.33.2"
 
 dependencyManagement {
   imports {
@@ -35,12 +32,7 @@ dependencies {
   implementation("co.elastic.clients:elasticsearch-java:9.4.1")
   implementation("org.elasticsearch.client:elasticsearch-rest-client:9.2.2")
   implementation("io.projectreactor:reactor-core")
-  implementation("io.grpc:grpc-netty-shaded:${property("grpcVersion")}")
-  implementation("io.grpc:grpc-protobuf:${property("grpcVersion")}")
-  implementation("io.grpc:grpc-stub:${property("grpcVersion")}")
-  implementation("com.google.protobuf:protobuf-java:${property("protobufVersion")}")
   implementation("jakarta.annotation:jakarta.annotation-api")
-  compileOnly("javax.annotation:javax.annotation-api:1.3.2")
   implementation("com.fasterxml.jackson.core:jackson-databind:2.21.3")
   implementation("software.amazon.awssdk:s3:2.44.12")
   implementation("org.apache.pdfbox:pdfbox:3.0.7")
@@ -49,33 +41,6 @@ dependencies {
   annotationProcessor("org.projectlombok:lombok")
   runtimeOnly("org.postgresql:postgresql")
   testImplementation("org.springframework.boot:spring-boot-starter-test")
-}
-
-protobuf {
-  protoc {
-    artifact = "com.google.protobuf:protoc:${property("protobufVersion")}"
-  }
-  plugins {
-    create("grpc") {
-      artifact = "io.grpc:protoc-gen-grpc-java:${property("grpcVersion")}"
-    }
-  }
-  generateProtoTasks {
-    all().forEach {
-      it.plugins {
-        create("grpc")
-      }
-    }
-  }
-}
-
-sourceSets {
-  main {
-    java {
-      srcDir("build/generated/source/proto/main/java")
-      srcDir("build/generated/source/proto/main/grpc")
-    }
-  }
 }
 
 tasks.withType<Test> {

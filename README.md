@@ -3,7 +3,7 @@
 On-premise RAG platform layout:
 
 - `frontend` - Next.js admin panel and chat UI.
-- `backend` - Java 22 + Spring Boot API, Postgres/Flyway, S3/local source handling, parsing, OCR orchestration, chunking.
+- `backend` - Java 22 + Spring Boot API, Postgres/Liquibase, S3/local source handling, parsing, OCR orchestration, chunking.
 - `llamalib` - Rust `cdylib` for expensive native work: GGUF embeddings, GGUF generation, LanceDB indexing/search.
 
 ## Local Development
@@ -114,9 +114,14 @@ The backend exposes practical transport styles over the same application service
 
 - REST: `/api/rag`, `/api/search`, `/api/documents`, `/api/ingestion`
 - Server-Sent Events / Reactor: `/api/search/stream`, `/api/ingestion/events`
-- gRPC: port `9090`, proto file `backend/src/main/proto/rag.proto`
 
-The heavy native work remains in Rust (`llama-cpp-2` + LanceDB). Java owns source orchestration, parsing, OCR process orchestration, transactions, projections, and transport adapters.
+The heavy native work remains in Rust (`llama-cpp-2` + LanceDB). Java owns source orchestration, parsing, OCR process orchestration, transactions, projections, and REST/SSE transport.
+
+Removed by KISS/YAGNI:
+
+- SOAP: no current legacy integration requirement.
+- JSON-RPC: duplicated REST without adding value.
+- gRPC: no separate internal service yet, so it was premature.
 
 ## Search Projection
 
