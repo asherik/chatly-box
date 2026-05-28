@@ -83,12 +83,15 @@ if (-not $javaReady) {
   throw "Java 22+ not found. Install JDK 22+ or set JAVA_HOME before running this script."
 }
 
-if (-not (Test-Path -LiteralPath "$repo\llamalib\target\release\chatly_llamalib.dll")) {
-  Push-Location "$repo\llamalib"
+$backendDir = Join-Path $repo "backend"
+$llamaDir = Join-Path $repo "llamalib"
+
+if (-not (Test-Path -LiteralPath "$llamaDir\target\release\chatly_llamalib.dll")) {
+  Push-Location $llamaDir
   cargo build --release
   Pop-Location
 }
 
-Push-Location "$repo"
-.\gradlew.bat :backend:bootRun
+Push-Location $backendDir
+gradle bootRun
 Pop-Location

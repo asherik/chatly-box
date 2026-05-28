@@ -2,6 +2,14 @@
 
 ## Локальная отладка
 
+Требуется локально:
+
+- Docker Desktop
+- Java 22+
+- Gradle 8.13+
+- Rust/Cargo
+- Node.js 22+
+
 ### 1. Поднять инфраструктуру
 
 ```sh
@@ -39,6 +47,13 @@ powershell -ExecutionPolicy Bypass -File .\run-local-backend.ps1
 
 ```powershell
 cargo build --release
+```
+
+Если запускаешь руками из папки backend:
+
+```powershell
+cd backend
+gradle bootRun
 ```
 
 ### 4. Запустить frontend
