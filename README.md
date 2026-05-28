@@ -8,12 +8,31 @@ On-premise RAG MVP layout:
 
 The Rust library currently exposes a safe FFI stub. It is intentionally shaped for replacing the internals with `llama-cpp-2` and LanceDB without changing the Java boundary.
 
-## Local development
+## One-command local start
 
-1. Start Postgres:
+```sh
+sh run.sh
+```
+
+The script starts Postgres and MinIO from `docker-compose-local`, then builds and starts the full stack from `docker-compose.yml`.
+
+Default URLs:
+
+- Frontend: http://localhost:3000
+- Backend: http://localhost:8080
+- MinIO console: http://localhost:9001
+
+Default admin login:
+
+- Email: `admin@company.local`
+- Password: `admin12345`
+
+## Local development without full Docker
+
+1. Start Postgres and MinIO:
 
 ```powershell
-docker compose up -d postgres
+docker compose -f docker-compose-local up -d
 ```
 
 2. Copy `frontend/.env.example` to `frontend/.env` for Next.js, and set Spring env vars if needed.

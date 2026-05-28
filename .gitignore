@@ -4,6 +4,7 @@
 /.next/
 /frontend/.next/
 /dist/
+/backend/target/
 /.env
 /frontend/.env
 /prisma/dev.db

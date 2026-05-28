@@ -1,0 +1,11 @@
+.git
+.idea
+.next
+node_modules
+frontend/.next
+frontend/node_modules
+frontend/storage
+llamalib/target
+backend/target
+*.tsbuildinfo
+*.log

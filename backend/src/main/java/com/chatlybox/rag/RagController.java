@@ -1,5 +1,6 @@
 package com.chatlybox.rag;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.chatlybox.nativebridge.LlamaLib;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -13,31 +14,48 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/rag")
 public class RagController {
   private final LlamaLib llamaLib;
+  private final ObjectMapper objectMapper;
 
-  public RagController(LlamaLib llamaLib) {
+  public RagController(LlamaLib llamaLib, ObjectMapper objectMapper) {
     this.llamaLib = llamaLib;
+    this.objectMapper = objectMapper;
   }
 
   @PostMapping("/chat")
   Map<String, String> chat(@Valid @RequestBody ChatRequest request) {
-    String json = """
-        {"question": "%s", "chatId": "%s"}
-        """.formatted(escape(request.question()), escape(request.chatId()));
-    return Map.of("answer", llamaLib.ask(json));
+    return Map.of("answer", llamaLib.ask(toJson(request)));
   }
 
   @PostMapping("/index")
   Map<String, String> index(@Valid @RequestBody IndexRequest request) {
-    String json = """
-        {"sourceId": "%s", "uri": "%s"}
-        """.formatted(escape(request.sourceId()), escape(request.uri()));
-    return Map.of("result", llamaLib.index(json));
+    return Map.of("result", llamaLib.index(toJson(request)));
   }
 
-  private static String escape(String value) {
-    return value == null ? "" : value.replace("\\", "\\\\").replace("\"", "\\\"");
+  private String toJson(Object value) {
+    try {
+      return objectMapper.writeValueAsString(value);
+    } catch (Exception error) {
+      throw new IllegalArgumentException("Invalid native request payload", error);
+    }
   }
 
-  record ChatRequest(@NotBlank String question, String chatId) {}
-  record IndexRequest(@NotBlank String sourceId, @NotBlank String uri) {}
+  record ChatRequest(
+      @NotBlank String dbPath,
+      @NotBlank String embeddingModelPath,
+      @NotBlank String chatModelPath,
+      @NotBlank String question,
+      Integer topK,
+      Integer maxTokens,
+      Float temperature,
+      Integer ctxSize,
+      String systemPrompt) {}
+
+  record IndexRequest(
+      @NotBlank String dbPath,
+      @NotBlank String embeddingModelPath,
+      String documentId,
+      @NotBlank String title,
+      @NotBlank String uri,
+      java.util.List<String> chunks,
+      Integer ctxSize) {}
 }

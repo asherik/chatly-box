@@ -16,7 +16,14 @@ spring:
     enabled: true
 
 chatly:
-  native-library-path: ${CHATLY_NATIVE_LIBRARY:../llamalib/target/release/chatly_llamalib.dll}
+  native-library-path: ${CHATLY_NATIVE_LIBRARY:/app/lib/libchatly_llamalib.so}
+  rag:
+    lancedb-uri: ${LANCEDB_URI:/data/lancedb}
+    embedding-model-path: ${EMBEDDING_MODEL_PATH:/models/embedding.gguf}
+    chat-model-path: ${CHAT_MODEL_PATH:/models/chat.gguf}
+    chunk-size: ${CHUNK_SIZE:1200}
+    chunk-overlap: ${CHUNK_OVERLAP:180}
+    ocr-language: ${OCR_LANGUAGE:rus+eng}
   auth:
     admin-email: ${ADMIN_EMAIL:admin@company.local}
     admin-password: ${ADMIN_PASSWORD:admin12345}
