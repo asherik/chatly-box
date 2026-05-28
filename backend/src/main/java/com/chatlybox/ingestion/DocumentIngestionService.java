@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
+
+import lombok.AllArgsConstructor;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
@@ -37,6 +39,7 @@ import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 @Service
+@AllArgsConstructor
 public class DocumentIngestionService {
   private final DocumentSourceRepository sources;
   private final DocumentRepository documents;
@@ -45,23 +48,6 @@ public class DocumentIngestionService {
   private final LlamaLib llamaLib;
   private final ObjectMapper objectMapper;
   private final IngestionProperties properties;
-
-  public DocumentIngestionService(
-      DocumentSourceRepository sources,
-      DocumentRepository documents,
-      DocumentSearchService searchService,
-      IngestionEventBus events,
-      LlamaLib llamaLib,
-      ObjectMapper objectMapper,
-      IngestionProperties properties) {
-    this.sources = sources;
-    this.documents = documents;
-    this.searchService = searchService;
-    this.events = events;
-    this.llamaLib = llamaLib;
-    this.objectMapper = objectMapper;
-    this.properties = properties;
-  }
 
   public SyncResult sync(UUID sourceId) {
     DocumentSource source = sources.findById(sourceId).orElseThrow();
