@@ -85,6 +85,13 @@ public class DocumentIngestionService {
         }
         List<String> chunks = chunk(text);
         DocumentEntity savedDocument = saveDocumentProjection(source, document, text, chunks);
+        try {
+          searchService.indexDocument(savedDocument);
+        } catch (RuntimeException error) {
+          events.publish(
+              IngestionEventBus.IngestionEvent.of(
+                  source.id, "SEARCH_SKIPPED", error.getMessage(), processedDocuments, indexed));
+        }
         String request =
             objectMapper.writeValueAsString(
                 Map.of(
@@ -117,13 +124,18 @@ public class DocumentIngestionService {
 
   private DocumentEntity saveDocumentProjection(
       DocumentSource source, LoadedDocument loaded, String text, List<String> chunks) throws Exception {
-    DocumentEntity document = new DocumentEntity();
-    document.id = UUID.randomUUID();
+    DocumentEntity document = documents.findBySourceIdAndUri(source.id, loaded.uri()).orElseGet(() -> {
+      DocumentEntity created = new DocumentEntity();
+      created.id = UUID.randomUUID();
+      created.sourceId = source.id;
+      created.createdAt = Instant.now();
+      return created;
+    });
     document.sourceId = source.id;
     document.title = loaded.title();
     document.uri = loaded.uri();
     document.checksum = sha256(loaded.uri() + ":" + text);
-    document.createdAt = Instant.now();
+    document.chunks.clear();
 
     for (int index = 0; index < chunks.size(); index += 1) {
       DocumentChunkEntity chunk = new DocumentChunkEntity();
@@ -134,13 +146,6 @@ public class DocumentIngestionService {
       chunk.embedding = "{}";
       chunk.createdAt = Instant.now();
       document.chunks.add(chunk);
-      try {
-        searchService.indexChunk(document.id, document.title, document.uri, index, chunk.content);
-      } catch (RuntimeException error) {
-        events.publish(
-            IngestionEventBus.IngestionEvent.of(
-                source.id, "SEARCH_SKIPPED", error.getMessage(), 0, index));
-      }
     }
     return documents.save(document);
   }

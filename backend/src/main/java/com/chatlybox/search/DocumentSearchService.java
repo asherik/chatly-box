@@ -17,8 +17,20 @@ public class DocumentSearchService {
     this.documents = documents;
   }
 
-  public void indexChunk(UUID documentId, String title, String uri, int ordinal, String content) {
-    index.indexChunk(documentId, title, uri, ordinal, content);
+  public void indexDocument(com.chatlybox.documents.DocumentEntity document) {
+    index.deleteDocument(document.id);
+    index.upsertChunks(document.chunks.stream()
+        .map(chunk -> new SearchableDocumentChunk(
+            document.id + "_" + chunk.ordinal,
+            chunk.id,
+            document.id,
+            document.sourceId,
+            document.title,
+            document.uri,
+            chunk.ordinal,
+            chunk.content,
+            document.checksum))
+        .toList());
   }
 
   public List<DocumentSearchIndex.DocumentHit> search(String query, int limit) {
@@ -30,14 +42,13 @@ public class DocumentSearchService {
   }
 
   public ReindexResult reindexFromPostgres() {
+    index.reset();
     int documentsCount = 0;
     int chunksCount = 0;
-    for (var document : documents.findTop50ByOrderByCreatedAtDesc()) {
+    for (var document : documents.findAllByOrderByCreatedAtDesc()) {
       documentsCount += 1;
-      for (var chunk : document.chunks) {
-        indexChunk(document.id, document.title, document.uri, chunk.ordinal, chunk.content);
-        chunksCount += 1;
-      }
+      indexDocument(document);
+      chunksCount += document.chunks.size();
     }
     return new ReindexResult(documentsCount, chunksCount);
   }

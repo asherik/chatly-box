@@ -57,11 +57,6 @@ services:
       - "7700:7700"
     volumes:
       - meili_data:/meili_data
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:7700/health >/dev/null || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 20
 
   opensearch:
     image: opensearchproject/opensearch:3
