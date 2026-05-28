@@ -139,7 +139,7 @@ public class DocumentIngestionService {
       } catch (RuntimeException error) {
         events.publish(
             IngestionEventBus.IngestionEvent.of(
-                source.id, "ELASTIC_SKIPPED", error.getMessage(), 0, index));
+                source.id, "SEARCH_SKIPPED", error.getMessage(), 0, index));
       }
     }
     return documents.save(document);

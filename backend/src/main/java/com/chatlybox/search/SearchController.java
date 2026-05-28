@@ -19,13 +19,13 @@ public class SearchController {
   }
 
   @GetMapping
-  List<DocumentSearchService.DocumentHit> search(
+  List<DocumentSearchIndex.DocumentHit> search(
       @RequestParam String q, @RequestParam(defaultValue = "10") int limit) {
     return searchService.search(q, limit);
   }
 
   @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-  Flux<DocumentSearchService.DocumentHit> stream(
+  Flux<DocumentSearchIndex.DocumentHit> stream(
       @RequestParam String q, @RequestParam(defaultValue = "10") int limit) {
     return searchService.searchReactive(q, limit);
   }

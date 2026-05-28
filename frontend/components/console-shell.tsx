@@ -19,7 +19,7 @@ type Message = {
   id: string;
   role: string;
   content: string;
-  sources?: Array<{ title: string; uri: string; score: number }>;
+  sources?: string | Array<{ title: string; uri: string; score: number }>;
 };
 
 type Chat = {
@@ -35,7 +35,7 @@ type Source = {
   status: string;
   lastError?: string;
   lastSyncedAt?: string;
-  _count?: { documents: number };
+  documents?: number;
 };
 
 type Settings = {
@@ -198,9 +198,9 @@ export function ConsoleShell({ user }: { user: SessionUser }) {
           {(activeChat?.messages.length ? activeChat.messages : emptyMessages).map((item, index) => (
             <article key={item.id ?? index} className={`message ${item.role}`}>
               <div>{item.content}</div>
-              {item.sources?.length ? (
+              {normalizeSources(item.sources).length ? (
                 <div className="source-links">
-                  {item.sources.map((source, sourceIndex) => (
+                  {normalizeSources(item.sources).map((source, sourceIndex) => (
                     <span key={`${source.uri}-${sourceIndex}`}>
                       [{sourceIndex + 1}] {source.title}
                     </span>
@@ -251,7 +251,7 @@ export function ConsoleShell({ user }: { user: SessionUser }) {
                 <div>
                   <strong>{source.name}</strong>
                   <span>
-                    {source.type} · {source.status} · {source._count?.documents ?? 0} док.
+                    {source.type} · {source.status} · {source.documents ?? 0} док.
                   </span>
                 </div>
                 <button onClick={() => sync(source.id)} title="Индексировать">
@@ -324,3 +324,14 @@ const emptyMessages: Message[] = [
       "Добавьте источник, запустите индексирование и задайте вопрос. Ответ будет построен только по найденным фрагментам документов."
   }
 ];
+
+function normalizeSources(sources: Message["sources"]) {
+  if (!sources) return [];
+  if (Array.isArray(sources)) return sources;
+  try {
+    const parsed = JSON.parse(sources);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}

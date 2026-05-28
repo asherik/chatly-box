@@ -29,8 +29,6 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-actuator")
   implementation("org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j")
   implementation("org.liquibase:liquibase-core:5.0.3")
-  implementation("co.elastic.clients:elasticsearch-java:9.4.1")
-  implementation("org.elasticsearch.client:elasticsearch-rest-client:9.2.2")
   implementation("io.projectreactor:reactor-core:3.8.5")
   implementation("jakarta.annotation:jakarta.annotation-api")
   implementation("com.fasterxml.jackson.core:jackson-databind:2.21.3")

@@ -2,12 +2,7 @@
 
 ## Локальная отладка
 
-Требуется локально:
-
-- Docker Desktop
-- Java 22+
-- Rust/Cargo
-- Node.js 22+
+Нужно локально: Docker Desktop, Java 22+, Rust/Cargo, Node.js 22+.
 
 ### 1. Поднять инфраструктуру
 
@@ -15,11 +10,7 @@
 sh run.sh
 ```
 
-Запустятся:
-
-- Postgres: `localhost:5432`
-- MinIO: `http://localhost:9001`
-- Elasticsearch: `http://localhost:9200`
+Поднимутся Postgres, MinIO и Meilisearch. Backend и frontend локально запускаются руками.
 
 ### 2. Положить модели
 
@@ -27,41 +18,40 @@ sh run.sh
 mkdir models
 ```
 
-Нужные файлы:
+Ожидаемые файлы:
 
 ```text
 models/embedding.gguf
 models/chat.gguf
 ```
 
-### 3. Запустить backend
-
-Сначала собрать Rust DLL:
+### 3. Собрать Rust-библиотеку
 
 ```powershell
-cd llamalib
-cargo build --release
+cd C:\projects\chatly-box\llamalib
+.\build-local.ps1
 ```
 
-Потом запустить backend:
+### 4. Запустить backend
 
 ```powershell
-cd backend
+cd C:\projects\chatly-box\backend
 .\gradlew.bat bootRun
 ```
 
-### 4. Запустить frontend
+Backend сам применяет Liquibase-миграции и создает дефолтного администратора.
 
-В отдельном терминале:
+### 5. Запустить frontend
 
 ```powershell
+cd C:\projects\chatly-box\frontend
 npm install
-npm run db:push
-npm run db:seed
 npm run dev
 ```
 
-### 5. Открыть приложение
+Frontend не ходит в Postgres, MinIO, Meilisearch, OpenSearch или LanceDB. Он ходит только в backend: `http://localhost:8080`.
+
+### 6. Открыть приложение
 
 ```text
 http://localhost:3000
@@ -95,13 +85,19 @@ sh run-full-docker.sh
 docker compose up --build
 ```
 
-Запустятся:
+Запустятся frontend, backend, Postgres, MinIO и Meilisearch.
 
-- Frontend: `http://localhost:3000`
-- Backend: `http://localhost:8080`
-- Postgres
-- MinIO
-- Elasticsearch
+Поиск по умолчанию работает через Meilisearch:
+
+```text
+SEARCH_ENGINE=meili
+```
+
+Для enterprise-сценариев можно включить OpenSearch:
+
+```sh
+SEARCH_ENGINE=opensearch docker compose --profile opensearch up --build
+```
 
 ## Полезные команды
 
@@ -115,11 +111,4 @@ docker compose -f docker-compose-local down
 
 ```sh
 docker compose down
-```
-
-Пересобрать Rust-библиотеку вручную:
-
-```powershell
-cd llamalib
-cargo build --release
 ```

@@ -1,7 +1,5 @@
 import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
-import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
 
 const cookieName = "chatly_session";
 const secret = new TextEncoder().encode(
@@ -15,12 +13,10 @@ export type SessionUser = {
   role: "ADMIN" | "USER";
 };
 
-export async function verifyPassword(password: string, hash: string) {
-  return bcrypt.compare(password, hash);
-}
+type SessionPayload = SessionUser & { backendToken: string };
 
-export async function createSession(user: SessionUser) {
-  const token = await new SignJWT(user)
+export async function createSession(user: SessionUser, backendToken: string) {
+  const token = await new SignJWT({ ...user, backendToken })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("8h")
@@ -42,22 +38,19 @@ export async function destroySession() {
 }
 
 export async function getSession(): Promise<SessionUser | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(cookieName)?.value;
-  if (!token) return null;
+  const payload = await readSessionPayload();
+  if (!payload) return null;
 
-  try {
-    const result = await jwtVerify(token, secret);
-    const payload = result.payload as SessionUser;
-    return {
-      id: payload.id,
-      email: payload.email,
-      name: payload.name ?? null,
-      role: payload.role
-    };
-  } catch {
-    return null;
-  }
+  return {
+    id: payload.id,
+    email: payload.email,
+    name: payload.name ?? null,
+    role: payload.role
+  };
+}
+
+export async function getBackendToken() {
+  return (await readSessionPayload())?.backendToken ?? null;
 }
 
 export async function requireSession() {
@@ -68,6 +61,15 @@ export async function requireSession() {
   return session;
 }
 
-export async function findLoginUser(email: string) {
-  return prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+async function readSessionPayload() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(cookieName)?.value;
+  if (!token) return null;
+
+  try {
+    const result = await jwtVerify(token, secret);
+    return result.payload as SessionPayload;
+  } catch {
+    return null;
+  }
 }

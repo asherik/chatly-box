@@ -46,17 +46,36 @@ services:
       mc anonymous set none local/chatly-docs;
       "
 
-  elasticsearch:
-    image: elasticsearch:9.4.1
-    container_name: chatly-box-elasticsearch
+  meilisearch:
+    image: getmeili/meilisearch:v1.16
+    container_name: chatly-box-meilisearch
+    environment:
+      MEILI_MASTER_KEY: chatly-local-master-key
+      MEILI_NO_ANALYTICS: "true"
+      MEILI_ENV: production
+    ports:
+      - "7700:7700"
+    volumes:
+      - meili_data:/meili_data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7700/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  opensearch:
+    image: opensearchproject/opensearch:3
+    container_name: chatly-box-opensearch
+    profiles: ["opensearch"]
     environment:
       discovery.type: single-node
-      xpack.security.enabled: "false"
-      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      plugins.security.disabled: "true"
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: admin
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
     ports:
       - "9200:9200"
     volumes:
-      - elastic_data:/usr/share/elasticsearch/data
+      - opensearch_data:/usr/share/opensearch/data
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:9200 >/dev/null || exit 1"]
       interval: 10s
@@ -82,7 +101,10 @@ services:
       AWS_ACCESS_KEY_ID: minioadmin
       AWS_SECRET_ACCESS_KEY: minioadmin
       AWS_REGION: us-east-1
-      ELASTICSEARCH_URIS: http://elasticsearch:9200
+      SEARCH_ENGINE: ${SEARCH_ENGINE:-meili}
+      MEILI_URL: http://meilisearch:7700
+      MEILI_MASTER_KEY: chatly-local-master-key
+      OPENSEARCH_URL: http://opensearch:9200
     ports:
       - "8080:8080"
     volumes:
@@ -91,7 +113,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      elasticsearch:
+      meilisearch:
         condition: service_healthy
 
   frontend:
@@ -100,18 +122,12 @@ services:
       dockerfile: Dockerfile
     container_name: chatly-box-frontend
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/chatly_box?schema=public
       AUTH_SECRET: local-development-secret-change-for-production
+      BACKEND_URL: http://backend:8080
       APP_URL: http://localhost:3000
-      OLLAMA_BASE_URL: http://host.docker.internal:11434
-      LLAMA_CPP_BASE_URL: http://host.docker.internal:8081
-      ADMIN_EMAIL: admin@company.local
-      ADMIN_PASSWORD: admin12345
     ports:
       - "3000:3000"
     depends_on:
-      postgres:
-        condition: service_healthy
       backend:
         condition: service_started
 
@@ -119,4 +135,5 @@ volumes:
   postgres_data:
   minio_data:
   lancedb_data:
-  elastic_data:
+  meili_data:
+  opensearch_data:

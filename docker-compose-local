@@ -46,17 +46,36 @@ services:
       mc anonymous set none local/chatly-docs;
       "
 
-  elasticsearch:
-    image: elasticsearch:9.4.1
-    container_name: chatly-box-elasticsearch
+  meilisearch:
+    image: getmeili/meilisearch:v1.16
+    container_name: chatly-box-meilisearch
+    environment:
+      MEILI_MASTER_KEY: chatly-local-master-key
+      MEILI_NO_ANALYTICS: "true"
+      MEILI_ENV: development
+    ports:
+      - "7700:7700"
+    volumes:
+      - meili_data:/meili_data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7700/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  opensearch:
+    image: opensearchproject/opensearch:3
+    container_name: chatly-box-opensearch
+    profiles: ["opensearch"]
     environment:
       discovery.type: single-node
-      xpack.security.enabled: "false"
-      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      plugins.security.disabled: "true"
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: admin
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
     ports:
       - "9200:9200"
     volumes:
-      - elastic_data:/usr/share/elasticsearch/data
+      - opensearch_data:/usr/share/opensearch/data
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:9200 >/dev/null || exit 1"]
       interval: 10s
@@ -66,4 +85,5 @@ services:
 volumes:
   postgres_data:
   minio_data:
-  elastic_data:
+  meili_data:
+  opensearch_data:

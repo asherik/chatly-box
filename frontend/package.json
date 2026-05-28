@@ -4,37 +4,22 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "db:generate": "prisma generate",
-    "db:push": "prisma db push",
-    "db:seed": "tsx prisma/seed.ts"
+    "lint": "next lint"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "latest",
-    "@prisma/adapter-pg": "latest",
-    "@prisma/client": "^7.8.0",
-    "bcryptjs": "latest",
-    "clsx": "latest",
     "jose": "latest",
     "lucide-react": "latest",
-    "mammoth": "latest",
     "next": "latest",
-    "pdf-parse": "latest",
-    "pg": "latest",
     "react": "latest",
     "react-dom": "latest",
     "zod": "latest"
   },
   "devDependencies": {
-    "@types/bcryptjs": "latest",
     "@types/node": "latest",
-    "@types/pg": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
-    "prisma": "^7.8.0",
-    "tsx": "latest",
     "typescript": "latest"
   }
 }

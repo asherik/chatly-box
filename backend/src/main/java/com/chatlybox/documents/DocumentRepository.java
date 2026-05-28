@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface DocumentRepository extends JpaRepository<DocumentEntity, UUID> {
+  long countBySourceId(UUID sourceId);
+
   @Override
   @EntityGraph(value = "document.withChunks")
   Optional<DocumentEntity> findById(UUID id);
