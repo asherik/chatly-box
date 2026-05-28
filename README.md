@@ -1,59 +1,127 @@
 # Chatly Box
 
-On-premise RAG MVP layout:
+On-premise RAG platform layout:
 
 - `frontend` - Next.js admin panel and chat UI.
-- `backend` - Java 22 + Spring Boot API with Postgres/Flyway and Project Panama native bridge.
-- `llamalib` - Rust `cdylib` boundary for local embedding/chat/indexing engine.
+- `backend` - Java 22 + Spring Boot API, Postgres/Flyway, S3/local source handling, parsing, OCR orchestration, chunking.
+- `llamalib` - Rust `cdylib` for expensive native work: GGUF embeddings, GGUF generation, LanceDB indexing/search.
 
-The Rust library currently exposes a safe FFI stub. It is intentionally shaped for replacing the internals with `llama-cpp-2` and LanceDB without changing the Java boundary.
+## Local Development
 
-## One-command local start
+Prerequisites:
+
+- Docker Desktop for Postgres and MinIO.
+- Java 22. The default script uses `C:\Users\asher\.jdks\corretto-22.0.2`.
+- Rust/Cargo.
+- Node.js 22.
+- LLVM/libclang for local `llama-cpp-2` builds on Windows.
+- `tesseract` in `PATH` if OCR is needed outside Docker.
+
+Create model files:
+
+```powershell
+mkdir models
+```
+
+Put GGUF models here:
+
+```text
+models/embedding.gguf
+models/chat.gguf
+```
+
+Start infrastructure:
 
 ```sh
-sh run.sh
+sh run-local-infra.sh
 ```
 
-The script starts Postgres and MinIO from `docker-compose-local`, then builds and starts the full stack from `docker-compose.yml`.
+This starts:
 
-Default URLs:
+- Postgres: `localhost:5432`
+- MinIO API: `localhost:9000`
+- MinIO console: `http://localhost:9001`
 
-- Frontend: http://localhost:3000
-- Backend: http://localhost:8080
-- MinIO console: http://localhost:9001
-
-Default admin login:
-
-- Email: `admin@company.local`
-- Password: `admin12345`
-
-## Local development without full Docker
-
-1. Start Postgres and MinIO:
+Build Rust native library manually if needed:
 
 ```powershell
-docker compose -f docker-compose-local up -d
-```
-
-2. Copy `frontend/.env.example` to `frontend/.env` for Next.js, and set Spring env vars if needed.
-3. Build native library:
-
-```powershell
-cd llamalib
+cd C:\projects\chatly-box\llamalib
 cargo build --release
 ```
 
-4. Run Java backend:
+Expected output:
 
-```powershell
-cd backend
-mvn spring-boot:run
+```text
+C:\projects\chatly-box\llamalib\target\release\chatly_llamalib.dll
 ```
 
-5. Run Next.js panel:
+If Cargo fails with `Unable to find libclang`, install LLVM and set:
 
 ```powershell
-cd frontend
-npm install
-npm run dev
+$env:LIBCLANG_PATH="C:\Program Files\LLVM\bin"
+```
+
+Start backend:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\run-local-backend.ps1
+```
+
+The backend script sets Java 22, builds `llamalib` if the DLL is missing, and runs Spring Boot.
+
+Start frontend in another terminal:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\run-local-frontend.ps1
+```
+
+The frontend script installs npm packages if needed, runs Prisma schema push, seeds the admin user, and starts Next.js.
+
+Open:
+
+- Frontend: `http://localhost:3000`
+- Backend API: `http://localhost:8080`
+- MinIO console: `http://localhost:9001`
+
+Default login:
+
+```text
+admin@company.local
+admin12345
+```
+
+Local defaults:
+
+- Postgres: `postgresql://postgres:postgres@localhost:5432/chatly_box`
+- LanceDB local path: `data/lancedb`
+- Embedding model: `models/embedding.gguf`
+- Chat model: `models/chat.gguf`
+- Native library: `llamalib/target/release/chatly_llamalib.dll`
+
+## Full Docker Start
+
+When Docker Desktop is running:
+
+```sh
+docker compose up --build
+```
+
+The full compose starts Postgres, MinIO, backend, and frontend.
+
+## LanceDB Storage
+
+By default local development writes LanceDB data to:
+
+```text
+data/lancedb
+```
+
+For S3/MinIO-backed LanceDB, set backend environment variables in `docker-compose.yml`:
+
+```yaml
+LANCEDB_URI: s3://chatly-docs/lancedb
+AWS_ENDPOINT_URL: http://minio:9000
+AWS_ACCESS_KEY_ID: minioadmin
+AWS_SECRET_ACCESS_KEY: minioadmin
+AWS_REGION: us-east-1
 ```
