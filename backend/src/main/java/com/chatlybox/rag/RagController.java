@@ -1,5 +1,7 @@
 package com.chatlybox.rag;
 
+import com.chatlybox.rag.dto.ChatRequest;
+import com.chatlybox.rag.dto.IndexRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.chatlybox.nativebridge.LlamaLib;
 import jakarta.validation.Valid;
@@ -38,24 +40,4 @@ public class RagController {
       throw new IllegalArgumentException("Invalid native request payload", error);
     }
   }
-
-  record ChatRequest(
-      @NotBlank String dbPath,
-      @NotBlank String embeddingModelPath,
-      @NotBlank String chatModelPath,
-      @NotBlank String question,
-      Integer topK,
-      Integer maxTokens,
-      Float temperature,
-      Integer ctxSize,
-      String systemPrompt) {}
-
-  record IndexRequest(
-      @NotBlank String dbPath,
-      @NotBlank String embeddingModelPath,
-      String documentId,
-      @NotBlank String title,
-      @NotBlank String uri,
-      java.util.List<String> chunks,
-      Integer ctxSize) {}
 }
