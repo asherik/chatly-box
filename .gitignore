@@ -7,9 +7,6 @@
 /backend/target/
 /backend/build/
 backend/.gradle/
-backend/gradle/
-backend/gradlew
-backend/gradlew.bat
 /.gradle/
 /.env
 /frontend/.env

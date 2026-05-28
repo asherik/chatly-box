@@ -6,7 +6,6 @@
 
 - Docker Desktop
 - Java 22+
-- Gradle 8.13+
 - Rust/Cargo
 - Node.js 22+
 
@@ -48,7 +47,7 @@ cargo build --release
 
 ```powershell
 cd backend
-gradle bootRun
+.\gradlew.bat bootRun
 ```
 
 ### 4. Запустить frontend
