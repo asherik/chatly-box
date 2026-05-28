@@ -37,19 +37,14 @@ models/chat.gguf
 
 ### 3. Запустить backend
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\run-local-backend.ps1
-```
-
-Скрипт сам найдёт Java 22+ через `JAVA_HOME`, `PATH` или стандартные папки установки JDK.
-
-Если Rust DLL ещё нет, скрипт сам выполнит:
+Сначала собрать Rust DLL:
 
 ```powershell
+cd llamalib
 cargo build --release
 ```
 
-Если запускаешь руками из папки backend:
+Потом запустить backend:
 
 ```powershell
 cd backend
@@ -61,10 +56,11 @@ gradle bootRun
 В отдельном терминале:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\run-local-frontend.ps1
+npm install
+npm run db:push
+npm run db:seed
+npm run dev
 ```
-
-Скрипт сам выполнит установку зависимостей, миграцию схемы Prisma, seed админа и запуск Next.js.
 
 ### 5. Открыть приложение
 
