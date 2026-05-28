@@ -1,5 +1,6 @@
 package com.chatlybox.ingestion;
 
+import com.chatlybox.ingestion.dto.IngestionEvent;
 import com.chatlybox.nativebridge.LlamaLib;
 import com.chatlybox.documents.DocumentChunkEntity;
 import com.chatlybox.documents.DocumentEntity;
@@ -54,13 +55,13 @@ public class DocumentIngestionService {
     source.status = "RUNNING";
     source.lastError = null;
     sources.save(source);
-    events.publish(IngestionEventBus.IngestionEvent.of(sourceId, "STARTED", "Source sync started", 0, 0));
+    events.publish(IngestionEvent.of(sourceId, "STARTED", "Source sync started", 0, 0));
 
     try {
       List<LoadedDocument> documents =
           "S3".equalsIgnoreCase(source.type) ? loadS3(source) : loadLocal(source);
       events.publish(
-          IngestionEventBus.IngestionEvent.of(
+          IngestionEvent.of(
               sourceId, "LOADED", "Documents loaded from source", documents.size(), 0));
       int indexed = 0;
       int processedDocuments = 0;
@@ -75,7 +76,7 @@ public class DocumentIngestionService {
           searchService.indexDocument(savedDocument);
         } catch (RuntimeException error) {
           events.publish(
-              IngestionEventBus.IngestionEvent.of(
+              IngestionEvent.of(
                   source.id, "SEARCH_SKIPPED", error.getMessage(), processedDocuments, indexed));
         }
         String request =
@@ -91,19 +92,19 @@ public class DocumentIngestionService {
         indexed += chunks.size();
         processedDocuments += 1;
         events.publish(
-            IngestionEventBus.IngestionEvent.of(
+            IngestionEvent.of(
                 sourceId, "INDEXED", document.uri(), processedDocuments, indexed));
       }
       source.status = "DONE";
       source.lastSyncedAt = Instant.now();
       sources.save(source);
-      events.publish(IngestionEventBus.IngestionEvent.of(sourceId, "DONE", "Source sync completed", documents.size(), indexed));
+      events.publish(IngestionEvent.of(sourceId, "DONE", "Source sync completed", documents.size(), indexed));
       return new SyncResult(documents.size(), indexed);
     } catch (Exception error) {
       source.status = "FAILED";
       source.lastError = error.getMessage();
       sources.save(source);
-      events.publish(IngestionEventBus.IngestionEvent.of(sourceId, "FAILED", error.getMessage(), 0, 0));
+      events.publish(IngestionEvent.of(sourceId, "FAILED", error.getMessage(), 0, 0));
       throw new IllegalStateException("Document sync failed", error);
     }
   }

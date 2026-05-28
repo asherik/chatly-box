@@ -26,7 +26,7 @@ public class IngestionController {
   }
 
   @GetMapping(value = "/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-  Flux<IngestionEventBus.IngestionEvent> events() {
+  Flux<IngestionEvent> events() {
     return events.stream();
   }
 }
