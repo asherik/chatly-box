@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package chatlybox.grpc;
+
+option java_multiple_files = true;
+option java_package = "com.chatlybox.grpc";
+option java_outer_classname = "RagProto";
+
+service RagService {
+  rpc Ask (AskRequest) returns (AskResponse);
+  rpc SearchDocuments (SearchRequest) returns (SearchResponse);
+}
+
+message AskRequest {
+  string question = 1;
+  int32 top_k = 2;
+}
+
+message AskResponse {
+  string answer = 1;
+}
+
+message SearchRequest {
+  string query = 1;
+  int32 limit = 2;
+}
+
+message SearchHit {
+  string document_id = 1;
+  string title = 2;
+  string uri = 3;
+  string excerpt = 4;
+}
+
+message SearchResponse {
+  repeated SearchHit hits = 1;
+}

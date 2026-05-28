@@ -1,6 +1,10 @@
 package com.chatlybox.ingestion;
 
 import com.chatlybox.nativebridge.LlamaLib;
+import com.chatlybox.documents.DocumentChunkEntity;
+import com.chatlybox.documents.DocumentEntity;
+import com.chatlybox.documents.DocumentRepository;
+import com.chatlybox.search.DocumentSearchService;
 import com.chatlybox.sources.DocumentSource;
 import com.chatlybox.sources.DocumentSourceRepository;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -35,16 +39,25 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 @Service
 public class DocumentIngestionService {
   private final DocumentSourceRepository sources;
+  private final DocumentRepository documents;
+  private final DocumentSearchService searchService;
+  private final IngestionEventBus events;
   private final LlamaLib llamaLib;
   private final ObjectMapper objectMapper;
   private final IngestionProperties properties;
 
   public DocumentIngestionService(
       DocumentSourceRepository sources,
+      DocumentRepository documents,
+      DocumentSearchService searchService,
+      IngestionEventBus events,
       LlamaLib llamaLib,
       ObjectMapper objectMapper,
       IngestionProperties properties) {
     this.sources = sources;
+    this.documents = documents;
+    this.searchService = searchService;
+    this.events = events;
     this.llamaLib = llamaLib;
     this.objectMapper = objectMapper;
     this.properties = properties;
@@ -55,39 +68,81 @@ public class DocumentIngestionService {
     source.status = "RUNNING";
     source.lastError = null;
     sources.save(source);
+    events.publish(IngestionEventBus.IngestionEvent.of(sourceId, "STARTED", "Source sync started", 0, 0));
 
     try {
       List<LoadedDocument> documents =
           "S3".equalsIgnoreCase(source.type) ? loadS3(source) : loadLocal(source);
+      events.publish(
+          IngestionEventBus.IngestionEvent.of(
+              sourceId, "LOADED", "Documents loaded from source", documents.size(), 0));
       int indexed = 0;
+      int processedDocuments = 0;
       for (LoadedDocument document : documents) {
         String text = extractText(document);
         if (text.isBlank()) {
           continue;
         }
         List<String> chunks = chunk(text);
+        DocumentEntity savedDocument = saveDocumentProjection(source, document, text, chunks);
         String request =
             objectMapper.writeValueAsString(
                 Map.of(
                     "dbPath", properties.lancedbUri(),
                     "embeddingModelPath", properties.embeddingModelPath(),
-                    "documentId", sha256(document.uri()),
+                    "documentId", savedDocument.id.toString(),
                     "title", document.title(),
                     "uri", document.uri(),
                     "chunks", chunks));
         llamaLib.index(request);
         indexed += chunks.size();
+        processedDocuments += 1;
+        events.publish(
+            IngestionEventBus.IngestionEvent.of(
+                sourceId, "INDEXED", document.uri(), processedDocuments, indexed));
       }
       source.status = "DONE";
       source.lastSyncedAt = Instant.now();
       sources.save(source);
+      events.publish(IngestionEventBus.IngestionEvent.of(sourceId, "DONE", "Source sync completed", documents.size(), indexed));
       return new SyncResult(documents.size(), indexed);
     } catch (Exception error) {
       source.status = "FAILED";
       source.lastError = error.getMessage();
       sources.save(source);
+      events.publish(IngestionEventBus.IngestionEvent.of(sourceId, "FAILED", error.getMessage(), 0, 0));
       throw new IllegalStateException("Document sync failed", error);
     }
+  }
+
+  private DocumentEntity saveDocumentProjection(
+      DocumentSource source, LoadedDocument loaded, String text, List<String> chunks) throws Exception {
+    DocumentEntity document = new DocumentEntity();
+    document.id = UUID.randomUUID();
+    document.sourceId = source.id;
+    document.title = loaded.title();
+    document.uri = loaded.uri();
+    document.checksum = sha256(loaded.uri() + ":" + text);
+    document.createdAt = Instant.now();
+
+    for (int index = 0; index < chunks.size(); index += 1) {
+      DocumentChunkEntity chunk = new DocumentChunkEntity();
+      chunk.id = UUID.randomUUID();
+      chunk.document = document;
+      chunk.ordinal = index;
+      chunk.content = chunks.get(index);
+      chunk.embedding = "{}";
+      chunk.createdAt = Instant.now();
+      document.chunks.add(chunk);
+      try {
+        searchService.indexChunk(document.id, document.title, document.uri, index, chunk.content);
+      } catch (RuntimeException error) {
+        events.publish(
+            IngestionEventBus.IngestionEvent.of(
+                source.id, "ELASTIC_SKIPPED", error.getMessage(), 0, index));
+      }
+    }
+    return documents.save(document);
   }
 
   private List<LoadedDocument> loadLocal(DocumentSource source) throws IOException {

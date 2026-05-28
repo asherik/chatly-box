@@ -5,6 +5,8 @@
 /frontend/.next/
 /dist/
 /backend/target/
+/backend/build/
+/.gradle/
 /.env
 /frontend/.env
 /prisma/dev.db

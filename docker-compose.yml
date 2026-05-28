@@ -46,6 +46,23 @@ services:
       mc anonymous set none local/chatly-docs;
       "
 
+  elasticsearch:
+    image: elasticsearch:9.4.1
+    container_name: chatly-box-elasticsearch
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elastic_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9200 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
   backend:
     build:
       context: .
@@ -65,6 +82,7 @@ services:
       AWS_ACCESS_KEY_ID: minioadmin
       AWS_SECRET_ACCESS_KEY: minioadmin
       AWS_REGION: us-east-1
+      ELASTICSEARCH_URIS: http://elasticsearch:9200
     ports:
       - "8080:8080"
     volumes:
@@ -72,6 +90,8 @@ services:
       - ./models:/models
     depends_on:
       postgres:
+        condition: service_healthy
+      elasticsearch:
         condition: service_healthy
 
   frontend:
@@ -99,3 +119,4 @@ volumes:
   postgres_data:
   minio_data:
   lancedb_data:
+  elastic_data:

@@ -4,6 +4,9 @@ server:
 spring:
   application:
     name: chatly-box
+  threads:
+    virtual:
+      enabled: true
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/chatly_box}
     username: ${DATABASE_USER:postgres}
@@ -12,8 +15,17 @@ spring:
     hibernate:
       ddl-auto: validate
     open-in-view: false
-  flyway:
+  liquibase:
+    change-log: classpath:/db/changelog/db.changelog-master.xml
     enabled: true
+  elasticsearch:
+    uris: ${ELASTICSEARCH_URIS:http://localhost:9200}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,circuitbreakers
 
 chatly:
   native-library-path: ${CHATLY_NATIVE_LIBRARY:../llamalib/target/release/chatly_llamalib.dll}
@@ -24,6 +36,8 @@ chatly:
     chunk-size: ${CHUNK_SIZE:1200}
     chunk-overlap: ${CHUNK_OVERLAP:180}
     ocr-language: ${OCR_LANGUAGE:rus+eng}
+  grpc:
+    port: ${GRPC_PORT:9090}
   auth:
     admin-email: ${ADMIN_EMAIL:admin@company.local}
     admin-password: ${ADMIN_PASSWORD:admin12345}

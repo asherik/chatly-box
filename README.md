@@ -67,7 +67,7 @@ Start backend:
 powershell -ExecutionPolicy Bypass -File .\run-local-backend.ps1
 ```
 
-The backend script sets Java 22, builds `llamalib` if the DLL is missing, and runs Spring Boot.
+The backend script sets Java 22, builds `llamalib` if the DLL is missing, and runs Spring Boot through Gradle.
 
 Start frontend in another terminal:
 
@@ -107,6 +107,33 @@ docker compose up --build
 ```
 
 The full compose starts Postgres, MinIO, backend, and frontend.
+
+## Backend Interfaces
+
+The backend exposes practical transport styles over the same application services:
+
+- REST: `/api/rag`, `/api/search`, `/api/documents`, `/api/ingestion`
+- Server-Sent Events / Reactor: `/api/search/stream`, `/api/ingestion/events`
+- gRPC: port `9090`, proto file `backend/src/main/proto/rag.proto`
+
+The heavy native work remains in Rust (`llama-cpp-2` + LanceDB). Java owns source orchestration, parsing, OCR process orchestration, transactions, projections, and transport adapters.
+
+## Search Projection
+
+Processed documents are stored in Postgres and indexed into Elasticsearch:
+
+- Postgres is the source-of-truth metadata/read model.
+- JPA `@NamedEntityGraph("document.withChunks")` is used for document detail reads.
+- Elasticsearch is a full-text search projection for processed chunks.
+- LanceDB stores vector data locally or in S3/MinIO.
+
+Manual Elastic reindex:
+
+```text
+POST /api/search/reindex
+```
+
+Request examples live in `docs/api-examples.md`.
 
 ## LanceDB Storage
 
